@@ -1,0 +1,45 @@
+from typing import Callable, Optional, Any
+
+from pyflink.common import TypeInformation
+from pyflink.datastream import DataStream, StreamExecutionEnvironment
+from pyflink.datastream.connectors import DeliveryGuarantee
+from pyflink.datastream.connectors.kafka import KafkaSink, KafkaRecordSerializationSchema
+
+from core.sink import ValueSink
+from infra.util.flink.type_conversions import flink_schema_to_row
+
+
+class KafkaValueSink(ValueSink):
+    def __init__(self,
+                 bootstrap_servers: list[str],
+                 serialization_schema: KafkaRecordSerializationSchema,
+                 sink_name: str,
+                 exactly_once: bool = False,
+                 transactional_id_prefix: Optional[str] = None,
+                 flink_schema: Optional[dict[str, TypeInformation]] = None,
+                 event_translator: Optional[Callable[[Any], Any]] = None):
+        self.sink_name = sink_name
+        self.serialization_schema = serialization_schema
+        serializer_builder = (KafkaSink.builder()
+                              .set_bootstrap_servers(",".join(bootstrap_servers))
+                              .set_record_serializer(serialization_schema))
+        if exactly_once and transactional_id_prefix:
+            trx_timeout_ms = 1000 * 60 * 10
+            self.kafka_producer = (serializer_builder
+                                   .set_property("transaction.timeout.ms", str(trx_timeout_ms))
+                                   .set_delivery_guarantee(DeliveryGuarantee.EXACTLY_ONCE)
+                                   .set_transactional_id_prefix(transactional_id_prefix)
+                                   .build())
+        else:
+            self.kafka_producer = (serializer_builder
+                                   .set_delivery_guarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                                   .build())
+        self.flink_schema = flink_schema
+        self.event_translator = event_translator
+
+    def write(self, ds: 'DataStream', env: 'StreamExecutionEnvironment', **kwargs) -> None:
+        if self.event_translator and self.flink_schema:
+            ds = ds.map(lambda row: self.event_translator(row), output_type=flink_schema_to_row(self.flink_schema))
+        (ds
+         .uid(f"{self.sink_name}-events")
+         .sink_to(self.kafka_producer))
