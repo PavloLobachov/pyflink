@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Callable, Optional, Any
+from typing import Callable, Optional, Any, TypeVar, Generic
 
 from pyflink.common.typeinfo import TypeInformation
 from pyflink.datastream import DataStream, StreamExecutionEnvironment
@@ -12,8 +12,11 @@ from infra.util.name_generator import generate_random_name
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
 
+I = TypeVar('I')
+O = TypeVar('O')
 
-class MongoDbValueSink(ValueSink):
+
+class MongoDbValueSink(Generic[I, O], ValueSink[O]):
     def __init__(self,
                  host: str,
                  port: int,
@@ -24,7 +27,7 @@ class MongoDbValueSink(ValueSink):
                  flink_schema: dict[str, TypeInformation],
                  primary_keys: Optional[list[str]] = None,
                  recreate_table: bool = False,
-                 event_translator: Optional[Callable[[Any], Any]] = None):
+                 event_translator: Optional[Callable[[I], O]] = None):
         self.host = host
         self.port = port
         self.database_name = database_name
@@ -41,22 +44,22 @@ class MongoDbValueSink(ValueSink):
         settings = EnvironmentSettings.new_instance().in_streaming_mode().build()
         table_env = StreamTableEnvironment.create(env, environment_settings=settings)
 
+        if self.event_translator:
+            ds = ds.map(lambda row: self.event_translator(row), output_type=flink_schema_to_row(self.flink_schema))
+
         if self.recreate_table:
             table_env.execute_sql(f"DROP TABLE IF EXISTS {self.table_name}")
 
         ddl = self._to_ddl()
-
         logging.info(f"Executing: {ddl}")
-
+        print(f"Executing: {ddl}")
         table_env.execute_sql(ddl)
-
-        if self.event_translator:
-            ds = ds.map(lambda row: self.event_translator(row), output_type=flink_schema_to_row(self.flink_schema))
 
         ds = ds.uid(f"{self.sink_name}-events")
         ds.print()
 
         table_env.create_temporary_view(self.temp_view_name, ds)
+        # table_env.from_data_stream()
 
         (table_env
          .from_path(self.temp_view_name)

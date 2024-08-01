@@ -14,7 +14,7 @@ class SocketStream(Stream):
     def __init__(self,
                  env: 'StreamExecutionEnvironment',
                  tweet_source: ValueSource,
-                 tweet_sink: ValueSink):
+                 tweet_sink: ValueSink[Row]):
         self.env = env
         self.tweet_source = tweet_source
         self.tweet_sink = tweet_sink

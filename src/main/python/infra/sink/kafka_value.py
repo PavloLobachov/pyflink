@@ -1,4 +1,6 @@
-from typing import Callable, Optional, Any
+import logging
+import sys
+from typing import Callable, Optional, Any, TypeVar, Mapping, Generic
 
 from pyflink.common import TypeInformation
 from pyflink.datastream import DataStream, StreamExecutionEnvironment
@@ -8,8 +10,13 @@ from pyflink.datastream.connectors.kafka import KafkaSink, KafkaRecordSerializat
 from core.sink import ValueSink
 from infra.util.flink.type_conversions import flink_schema_to_row
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
 
-class KafkaValueSink(ValueSink):
+I = TypeVar('I')
+O = TypeVar('O')
+
+
+class KafkaValueSink(Generic[I, O], ValueSink[O]):
     def __init__(self,
                  bootstrap_servers: list[str],
                  serialization_schema: KafkaRecordSerializationSchema,
@@ -17,7 +24,7 @@ class KafkaValueSink(ValueSink):
                  exactly_once: bool = False,
                  transactional_id_prefix: Optional[str] = None,
                  flink_schema: Optional[dict[str, TypeInformation]] = None,
-                 event_translator: Optional[Callable[[Any], Any]] = None):
+                 event_translator: Optional[Callable[[I], O]] = None):
         self.sink_name = sink_name
         self.serialization_schema = serialization_schema
         serializer_builder = (KafkaSink.builder()
