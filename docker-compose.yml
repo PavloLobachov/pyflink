@@ -60,6 +60,27 @@ services:
     networks:
       - my-network
 
+  broker-command:
+    image: confluentinc/cp-kafka:7.0.1
+    hostname: broker-command
+    container_name: "${CONTAINER_PREFIX:-twitter-stream}-broker-command"
+    depends_on:
+      - broker-1
+      - zookeeper
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+                           cub kafka-ready -b broker-1:29092 1 20 && \
+                           kafka-topics --create --topic tweets --if-not-exists --bootstrap-server broker-1:29092 --partitions 3 --replication-factor 1 \
+                           sleep infinity'"
+    environment:
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://broker-1:29092,EXTERNAL://broker-1:9092,HOST://broker-1:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:29092,EXTERNAL://192.168.0.53:9092,HOST://localhost:19092
+    networks:
+      - my-network
+
   # Kafka Schema Registry
   schema-registry:
     image: confluentinc/cp-schema-registry:7.0.1
@@ -101,6 +122,8 @@ services:
       - ./:/opt/flink/usrlib
       - ./keys/:/var/private/ssl/
       - ./src/:/opt/src
+      - ./dist/:/opt/dist
+      - ./config/:/opt/config
       - ./checkpoints/:/opt/checkpoints
     command: jobmanager 
     extra_hosts:
@@ -129,6 +152,8 @@ services:
       - ./:/opt/flink/usrlib
       - ./keys/:/var/private/ssl/
       - ./src/:/opt/src
+      - ./dist/:/opt/dist
+      - ./config/:/opt/config
       - ./checkpoints/:/opt/checkpoints
     depends_on:
       - jobmanager

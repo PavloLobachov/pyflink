@@ -6,7 +6,9 @@ from infra.factory import Factory
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
 
 if __name__ == "__main__":
-    factory = Factory("local")
+    argv_ = sys.argv[1:]
+    print("Arguments passed to script:", argv_)
+    factory = Factory(argv_[0])
 
     env1 = factory.get_env("TwitterCollectionStreamingJob")
     stream1 = factory.create_local_socket_stream(env1)

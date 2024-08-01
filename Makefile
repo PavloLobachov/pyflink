@@ -8,12 +8,13 @@ YELLOW := $(shell tput -Txterm setaf 3)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
-PACKAGE_NAME = streaming
+PACKAGE_NAME = pyflink
 VERSION = 1.0.0
 SRC_DIR = src
 CONFIG_DIR = config
 BUILD_DIR = build
 DIST_DIR = dist
+VENV_DIR = virtual_env
 
 TARGET_MAX_CHAR_NUM=20
 
@@ -57,16 +58,16 @@ down:
 .PHONY: job
 ## Submit the Flink job
 ingestion_stream:
-	docker compose exec jobmanager ./bin/flink run -py /opt/src/app.py --pyFiles /opt/src -d
+	docker compose exec jobmanager ./bin/flink run -py /opt/src/app.py dev --pyFiles /opt/src -d
 
 aggregation_stream:
-	docker compose exec jobmanager ./bin/flink run -py /opt/src/app.py --pyFiles /opt/src -d
+	docker compose exec jobmanager ./bin/flink run -py /opt/src/app.py dev --pyFiles /opt/src -d
 
 sql_client:
 	docker compose exec jobmanager ./bin/sql-client.sh
 
 zip:
-	docker compose exec jobmanager ./bin/flink run -py /opt/dist/my_project-1.0.0.zip -pymodule app
+	docker compose exec jobmanager ./bin/flink run -py /opt/dist/${PACKAGE_NAME}-${VERSION}.zip -pymodule app
 
 .PHONY: docker_stop
 ## Stops all services in Docker compose
@@ -90,13 +91,15 @@ clean:
 .PHONY: clean
 clean:
 ## Clean target: removes previous build and distribution directories
-	rm -rf $(BUILD_DIR) $(DIST_DIR)
+	rm -rf $(BUILD_DIR) $(DIST_DIR) $(VENV_DIR)
 
 .PHONY: package
 ## Package target: installs dependencies, copies source and config files, and creates a zip package
 package:
 	mkdir -p $(BUILD_DIR) $(DIST_DIR)
-	pip install -r requirements.txt --target $(BUILD_DIR)
+	python -m venv $(VENV_DIR)
+	. $(VENV_DIR)/bin/activate && pip install -r requirements.txt
+	cp -r $(VENV_DIR)/lib/python*/site-packages/* $(BUILD_DIR)
 	cp -r $(SRC_DIR)/* $(BUILD_DIR)
 	cp -r $(CONFIG_DIR) $(BUILD_DIR)/config
 	cd $(BUILD_DIR) && zip -r ../$(DIST_DIR)/$(PACKAGE_NAME)-$(VERSION).zip .
