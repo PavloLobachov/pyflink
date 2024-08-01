@@ -62,7 +62,6 @@ class MongoDbValueSink(Generic[I, O], ValueSink[I]):
         table_env.execute_sql(ddl)
 
         ds = ds.uid(f"{self.sink_name}-events")
-        ds.print()
 
         table_env.create_temporary_view(self.temp_view_name, ds)
 

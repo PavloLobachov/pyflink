@@ -1,7 +1,6 @@
 import configparser
 import os
 from datetime import datetime
-from pathlib import Path
 
 from pyflink.common import Configuration, Types, Duration, Row
 from pyflink.common.watermark_strategy import TimestampAssigner, WatermarkStrategy

@@ -22,9 +22,11 @@ class SocketStream(Stream):
     def process(self) -> None:
         ds = self.read(self.tweet_source)
         cleared_ds = (ds
-                      .map(func=CleanTweetFunction())
+                      .map(func=CleanTweetFunction(),
+                           output_type=Types.STRING())
                       .uid("clean-tweets")
-                      .map(func=MapTweetToRowFunction())
+                      .map(func=MapTweetToRowFunction(),
+                           output_type=Types.ROW([Types.STRING(), Types.STRING(), Types.STRING()]))
                       .uid("format-tweets"))
         self.write(self.tweet_sink, cleared_ds)
 
