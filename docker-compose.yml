@@ -1,5 +1,18 @@
 version: "3.9"
 services:
+  generator:
+    image: python:3.9-slim
+    container_name: "${CONTAINER_PREFIX:-twitter-stream}-generator"
+    hostname: generator
+    ports:
+      - "5555:5555"
+    command: python twitter_stream_simulator.py
+    working_dir: /opt/generator
+    volumes:
+      - ./generator/:/opt/generator
+    networks:
+      - my-network
+
   # Zookeeper
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
@@ -140,6 +153,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
       - dbdata:/data/db
 
 volumes:
