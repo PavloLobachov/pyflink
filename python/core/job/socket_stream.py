@@ -13,7 +13,7 @@ class SocketStream(Stream):
 
     def __init__(self,
                  env: 'StreamExecutionEnvironment',
-                 tweet_source: ValueSource,
+                 tweet_source: ValueSource[str],
                  tweet_sink: ValueSink[Row]):
         self.env = env
         self.tweet_source = tweet_source
@@ -22,11 +22,9 @@ class SocketStream(Stream):
     def process(self) -> None:
         ds = self.read(self.tweet_source)
         cleared_ds = (ds
-                      .map(func=CleanTweetFunction(),
-                           output_type=Types.STRING())
+                      .map(func=CleanTweetFunction())
                       .uid("clean-tweets")
-                      .map(func=MapTweetToRowFunction(),
-                           output_type=Types.ROW([Types.STRING(), Types.STRING(), Types.STRING()]))
+                      .map(func=MapTweetToRowFunction())
                       .uid("format-tweets"))
         self.write(self.tweet_sink, cleared_ds)
 

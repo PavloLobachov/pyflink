@@ -16,7 +16,7 @@ I = TypeVar('I')
 O = TypeVar('O')
 
 
-class KafkaValueSink(Generic[I, O], ValueSink[O]):
+class KafkaValueSink(Generic[I, O], ValueSink[I]):
     def __init__(self,
                  bootstrap_servers: list[str],
                  serialization_schema: KafkaRecordSerializationSchema,
@@ -28,7 +28,7 @@ class KafkaValueSink(Generic[I, O], ValueSink[O]):
         self.sink_name = sink_name
         self.serialization_schema = serialization_schema
         serializer_builder = (KafkaSink.builder()
-                              .set_bootstrap_servers(",".join(bootstrap_servers))
+                              .set_bootstrap_servers(bootstrap_servers)
                               .set_record_serializer(serialization_schema))
         if exactly_once and transactional_id_prefix:
             trx_timeout_ms = 1000 * 60 * 10
@@ -43,6 +43,7 @@ class KafkaValueSink(Generic[I, O], ValueSink[O]):
                                    .build())
         self.flink_schema = flink_schema
         self.event_translator = event_translator
+        logging.debug(f"bootstrap_servers:{bootstrap_servers}, sink_name:{sink_name}")
 
     def write(self, ds: 'DataStream', env: 'StreamExecutionEnvironment', **kwargs) -> None:
         if self.event_translator and self.flink_schema:

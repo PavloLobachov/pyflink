@@ -14,7 +14,7 @@ class AggregatorStream(Stream):
 
     def __init__(self,
                  env: 'StreamExecutionEnvironment',
-                 tweet_source: ValueSource,
+                 tweet_source: ValueSource[Row],
                  tweet_sink: ValueSink[Row],
                  external_service: Callable[[], ExternalService[dict[str, Any]]]):
         self.env = env

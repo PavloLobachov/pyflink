@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Callable, Optional, Any, TypeVar, Generic
+from typing import Callable, Optional, TypeVar, Generic
 
 from pyflink.common.typeinfo import TypeInformation
 from pyflink.datastream import DataStream, StreamExecutionEnvironment
@@ -16,7 +16,7 @@ I = TypeVar('I')
 O = TypeVar('O')
 
 
-class MongoDbValueSink(Generic[I, O], ValueSink[O]):
+class MongoDbValueSink(Generic[I, O], ValueSink[I]):
     def __init__(self,
                  host: str,
                  port: int,
@@ -39,6 +39,13 @@ class MongoDbValueSink(Generic[I, O], ValueSink[O]):
         self.recreate_table = recreate_table
         self.event_translator = event_translator
         self.temp_view_name = generate_random_name()
+        logging.debug(f"host:{host}, "
+                      f"port:{port}, "
+                      f"database_name:{database_name}, "
+                      f"collection_name:{collection_name}, "
+                      f"table_name:{table_name}, "
+                      f"sink_name:{sink_name}, "
+                      f"flink_schema:{flink_schema}")
 
     def write(self, ds: 'DataStream', env: 'StreamExecutionEnvironment', **kwargs) -> None:
         settings = EnvironmentSettings.new_instance().in_streaming_mode().build()
@@ -52,14 +59,12 @@ class MongoDbValueSink(Generic[I, O], ValueSink[O]):
 
         ddl = self._to_ddl()
         logging.info(f"Executing: {ddl}")
-        print(f"Executing: {ddl}")
         table_env.execute_sql(ddl)
 
         ds = ds.uid(f"{self.sink_name}-events")
         ds.print()
 
         table_env.create_temporary_view(self.temp_view_name, ds)
-        # table_env.from_data_stream()
 
         (table_env
          .from_path(self.temp_view_name)
