@@ -106,7 +106,7 @@ services:
       - ./dist/:/opt/job/dist
       - ./config/:/opt/job/config
       - ./checkpoints/:/opt/checkpoints
-    command: jobmanager 
+    command: jobmanager
     extra_hosts:
       - "host.docker.internal:127.0.0.1" #// Linux
       - "host.docker.internal:host-gateway" #// Access services on the host machine from within the Docker container
@@ -160,7 +160,7 @@ services:
       - "27017:27017"
     volumes:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
-      - dbdata:/data/db
+      - ./dbdata:/data/db
 
 volumes:
   dbdata:

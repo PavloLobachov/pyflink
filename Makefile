@@ -57,22 +57,22 @@ down:
 
 .PHONY: job
 ## Submit the Flink job
-remote_ingestion_stream:
+remote_collection_stream:
 	docker compose exec jobmanager bash -c \
-	"cd /opt && ./flink/bin/flink run --pyFiles /opt/target/${PACKAGE_NAME}-${VERSION}/src,/opt/target/${PACKAGE_NAME}-${VERSION}/config --pyModule job.src.app dev collect" \
+	"cd /opt && ./flink/bin/flink run --pyFiles /opt/target/job/src,/opt/target/job/config --pyModule target.job.src.app dev collect" \
 	-d
 
 remote_aggregation_stream:
 	docker compose exec jobmanager bash -c \
-	"cd /opt && ./flink/bin/flink run --pyFiles /opt/target/${PACKAGE_NAME}-${VERSION}/src,/opt/target/${PACKAGE_NAME}-${VERSION}/config --pyModule job.src.app dev aggregate" \
+	"cd /opt && ./flink/bin/flink run --pyFiles /opt/target/job/src,/opt/target/job/config --pyModule target.job.src.app dev aggregate" \
 	-d
 
-loca_ingestion_stream:
+local_collection_stream:
 	docker compose exec jobmanager bash -c \
 	"cd /opt && ./flink/bin/flink run --pyFiles /opt/job/src,/opt/job/config --pyModule job.src.app dev collect" \
 	-d
 
-loca_aggregation_stream:
+local_aggregation_stream:
 	docker compose exec jobmanager bash -c \
 	"cd /opt && ./flink/bin/flink run --pyFiles /opt/job/src,/opt/job/config --pyModule job.src.app dev aggregate" \
 	-d
@@ -107,9 +107,6 @@ clean:
 ## Package target: installs dependencies, copies source and config files, and creates a zip package
 package:
 	mkdir -p $(BUILD_DIR) $(DIST_DIR)
-	python3 -m venv $(VENV_DIR)
-	. $(VENV_DIR)/bin/activate && pip install -r requirements.txt
-	cp -r $(VENV_DIR)/lib/python*/site-packages/* $(BUILD_DIR)
 	cp -r $(SRC_DIR) $(BUILD_DIR)/$(SRC_DIR)
 	cp -r $(CONFIG_DIR) $(BUILD_DIR)/$(CONFIG_DIR)
 	cd $(BUILD_DIR) && zip -r ../$(DIST_DIR)/$(PACKAGE_NAME)-$(VERSION).zip .
@@ -117,4 +114,4 @@ package:
 deploy:
 	docker compose exec jobmanager bash -c "rm -rf /opt/target/${PACKAGE_NAME}-${VERSION} && mkdir -p /opt/target/${PACKAGE_NAME}-${VERSION}"
 	docker compose cp $(DIST_DIR)/${PACKAGE_NAME}-${VERSION}.zip jobmanager:/opt/${PACKAGE_NAME}-${VERSION}.zip
-	docker compose exec jobmanager bash -c "unzip /opt/${PACKAGE_NAME}-${VERSION}.zip -d /opt/target/${PACKAGE_NAME}-${VERSION}"
+	docker compose exec jobmanager bash -c "unzip /opt/${PACKAGE_NAME}-${VERSION}.zip -d /opt/target/job"

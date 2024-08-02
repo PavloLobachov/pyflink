@@ -81,7 +81,8 @@ class Factory:
         # 1 ./bin/mongosh
         # 2 use twitter_db
         # 3 db.createCollection("twitter_collection")
-        # 4 read collection db.twitter_collection.find()
+        # 4 db.twitter_collection.find()
+        # 5 db.twitter_collection.drop()
         schema = dict()
         schema["hash"] = Types.STRING()
         schema["content"] = Types.LIST(Types.STRING())
@@ -103,6 +104,7 @@ class Factory:
             flink_schema=schema,
             primary_keys=["hash"],
             event_translator=_aggregated_data_to_mongo_record,
+            recreate_table=True,
             sink_name="mongo_tweets_sink")
         return AggregatorStream(env, tweet_kafka_source, tweet_mongo_sink, lambda: DataProvider())
 
