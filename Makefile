@@ -37,23 +37,28 @@ help:
 
 .PHONY: docker_build
 ## Builds the Flink base image with pyFlink and connectors installed
-build:
+docker_build:
 	docker build --platform ${PLATFORM} -t ${IMAGE_NAME} .
 
 .PHONY: docker_build_no_cache
 ## Builds the Flink base image with pyFlink and connectors installed from scratch
-build_no_cache:
+docker_build_no_cache:
 	docker build --no-cache --platform ${PLATFORM} -t ${IMAGE_NAME} .
 
 .PHONY: docker_up
 ## Builds the base Docker image and starts Flink cluster
-up:
+docker_up:
 	docker compose --env-file flink-env.env up --build --remove-orphans  -d
 
 .PHONY: docker_down
 ## Shuts down the Flink cluster
-down:
+docker_down:
 	docker compose down --remove-orphans
+
+.PHONY: docker_logs
+## Follow logs
+logs:
+	docker compose logs -f
 
 .PHONY: job
 ## Submit the Flink job
@@ -82,24 +87,24 @@ sql_client:
 
 .PHONY: docker_stop
 ## Stops all services in Docker compose
-stop:
+docker_stop:
 	docker compose stop
 
 .PHONY: docker_start
 ## Starts all services in Docker compose
-start:
+docker_start:
 	docker compose start
 
 .PHONY: docker_clean
 ## Stops and removes the Docker container as well as images with tag `<none>`
-clean:
+docker_clean:
 	docker compose stop
 	docker ps -a --format '{{.Names}}' | grep "^${CONTAINER_PREFIX}" | xargs -I {} docker rm {}
 	docker images | grep "<none>" | awk '{print $3}' | xargs -r docker rmi
 	# Uncomment line `docker rmi` if you want to remove the Docker image from this set up too
 	# docker rmi ${IMAGE_NAME}
 
-.PHONY: packaging
+.PHONY: build
 clean:
 ## Clean target: removes previous build and distribution directories
 	rm -rf $(BUILD_DIR) $(DIST_DIR) $(VENV_DIR)

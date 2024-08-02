@@ -160,7 +160,9 @@ services:
       - "27017:27017"
     volumes:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
-      - ./dbdata:/data/db
+      - dbdata:/data/db
+    networks:
+      - my-network
 
 volumes:
   dbdata:
