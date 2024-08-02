@@ -23,7 +23,7 @@ class KafkaValueSource(Generic[I, O], ValueSource[O]):
                  starting_offsets_initializer: 'KafkaOffsetsInitializer',
                  deserialization_schema: DeserializationSchema,
                  source_name: str,
-                 watermark_strategy: WatermarkStrategy = WatermarkStrategy.for_monotonous_timestamps(),
+                 watermark_strategy: WatermarkStrategy,
                  flink_schema: Optional[dict[str, TypeInformation]] = None,
                  event_translator: Optional[Callable[[I], O]] = None):
         self.topic = topic

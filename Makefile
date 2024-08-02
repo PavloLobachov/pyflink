@@ -57,17 +57,28 @@ down:
 
 .PHONY: job
 ## Submit the Flink job
-ingestion_stream:
-	docker compose exec jobmanager ./bin/flink run -py /opt/src/app.py dev --pyFiles /opt/src -d
+remote_ingestion_stream:
+	docker compose exec jobmanager bash -c \
+	"cd /opt && ./flink/bin/flink run --pyFiles /opt/target/${PACKAGE_NAME}-${VERSION}/src,/opt/target/${PACKAGE_NAME}-${VERSION}/config --pyModule job.src.app dev collect" \
+	-d
 
-aggregation_stream:
-	docker compose exec jobmanager ./bin/flink run -py /opt/src/app.py dev --pyFiles /opt/src -d
+remote_aggregation_stream:
+	docker compose exec jobmanager bash -c \
+	"cd /opt && ./flink/bin/flink run --pyFiles /opt/target/${PACKAGE_NAME}-${VERSION}/src,/opt/target/${PACKAGE_NAME}-${VERSION}/config --pyModule job.src.app dev aggregate" \
+	-d
+
+loca_ingestion_stream:
+	docker compose exec jobmanager bash -c \
+	"cd /opt && ./flink/bin/flink run --pyFiles /opt/job/src,/opt/job/config --pyModule job.src.app dev collect" \
+	-d
+
+loca_aggregation_stream:
+	docker compose exec jobmanager bash -c \
+	"cd /opt && ./flink/bin/flink run --pyFiles /opt/job/src,/opt/job/config --pyModule job.src.app dev aggregate" \
+	-d
 
 sql_client:
 	docker compose exec jobmanager ./bin/sql-client.sh
-
-zip:
-	docker compose exec jobmanager ./bin/flink run -py /opt/dist/${PACKAGE_NAME}-${VERSION}.zip -pymodule app
 
 .PHONY: docker_stop
 ## Stops all services in Docker compose
@@ -88,18 +99,22 @@ clean:
 	# Uncomment line `docker rmi` if you want to remove the Docker image from this set up too
 	# docker rmi ${IMAGE_NAME}
 
-.PHONY: clean
+.PHONY: packaging
 clean:
 ## Clean target: removes previous build and distribution directories
 	rm -rf $(BUILD_DIR) $(DIST_DIR) $(VENV_DIR)
 
-.PHONY: package
 ## Package target: installs dependencies, copies source and config files, and creates a zip package
 package:
 	mkdir -p $(BUILD_DIR) $(DIST_DIR)
-	python -m venv $(VENV_DIR)
+	python3 -m venv $(VENV_DIR)
 	. $(VENV_DIR)/bin/activate && pip install -r requirements.txt
 	cp -r $(VENV_DIR)/lib/python*/site-packages/* $(BUILD_DIR)
-	cp -r $(SRC_DIR)/* $(BUILD_DIR)
-	cp -r $(CONFIG_DIR) $(BUILD_DIR)/config
+	cp -r $(SRC_DIR) $(BUILD_DIR)/$(SRC_DIR)
+	cp -r $(CONFIG_DIR) $(BUILD_DIR)/$(CONFIG_DIR)
 	cd $(BUILD_DIR) && zip -r ../$(DIST_DIR)/$(PACKAGE_NAME)-$(VERSION).zip .
+
+deploy:
+	docker compose exec jobmanager bash -c "rm -rf /opt/target/${PACKAGE_NAME}-${VERSION} && mkdir -p /opt/target/${PACKAGE_NAME}-${VERSION}"
+	docker compose cp $(DIST_DIR)/${PACKAGE_NAME}-${VERSION}.zip jobmanager:/opt/${PACKAGE_NAME}-${VERSION}.zip
+	docker compose exec jobmanager bash -c "unzip /opt/${PACKAGE_NAME}-${VERSION}.zip -d /opt/target/${PACKAGE_NAME}-${VERSION}"

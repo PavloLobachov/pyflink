@@ -4,6 +4,7 @@ services:
     image: python:3.9-slim
     container_name: "${CONTAINER_PREFIX:-twitter-stream}-generator"
     hostname: generator
+    restart: always
     ports:
       - "5555:5555"
     command: python twitter_stream_simulator.py
@@ -81,26 +82,6 @@ services:
     networks:
       - my-network
 
-  # Kafka Schema Registry
-  schema-registry:
-    image: confluentinc/cp-schema-registry:7.0.1
-    hostname: schema-registry
-    container_name: "${CONTAINER_PREFIX:-twitter-stream}-schema-registry"
-    restart: always
-    depends_on:
-      - zookeeper
-      - broker-1
-    ports:
-      - "8081:8081"
-    environment:
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker-1:29092'
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
-      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
-    networks:
-      - my-network
-
   # Flink job manager
   jobmanager:
     build:
@@ -121,9 +102,9 @@ services:
     volumes:
       - ./:/opt/flink/usrlib
       - ./keys/:/var/private/ssl/
-      - ./src/:/opt/src
-      - ./dist/:/opt/dist
-      - ./config/:/opt/config
+      - ./src/:/opt/job/src
+      - ./dist/:/opt/job/dist
+      - ./config/:/opt/job/config
       - ./checkpoints/:/opt/checkpoints
     command: jobmanager 
     extra_hosts:
@@ -151,9 +132,9 @@ services:
     volumes:
       - ./:/opt/flink/usrlib
       - ./keys/:/var/private/ssl/
-      - ./src/:/opt/src
-      - ./dist/:/opt/dist
-      - ./config/:/opt/config
+      - ./src/:/opt/job/src
+      - ./dist/:/opt/job/dist
+      - ./config/:/opt/job/config
       - ./checkpoints/:/opt/checkpoints
     depends_on:
       - jobmanager

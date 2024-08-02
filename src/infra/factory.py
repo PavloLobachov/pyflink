@@ -40,7 +40,7 @@ class Factory:
         ["tweet_hash", "tweet", "event_time"],
         [Types.STRING(), Types.STRING(), Types.STRING()]))
 
-    def create_local_socket_stream(self, env: 'StreamExecutionEnvironment') -> Stream:
+    def create_socket_stream(self, env: 'StreamExecutionEnvironment') -> Stream:
         tweet_http_source = HttpValueSource[str, str](
             host=self.config['web_socket']['host'],
             port=int(self.config['web_socket']['port']),
@@ -59,7 +59,7 @@ class Factory:
 
         return SocketStream(env, tweet_http_source, tweet_kafka_sink)
 
-    def create_local_aggregator_stream(self, env: 'StreamExecutionEnvironment') -> Stream:
+    def create_aggregator_stream(self, env: 'StreamExecutionEnvironment') -> Stream:
         watermark_strategy = (WatermarkStrategy
                               .for_monotonous_timestamps()
                               .with_timestamp_assigner(self.TweetTimestampAssigner())
