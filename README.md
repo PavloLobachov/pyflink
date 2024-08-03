@@ -86,11 +86,11 @@ Saves enriched data into MongoDB.
    ```sh
       make docker_up
    ```
-2. **Package and deploy project:**:
+3. **Package and deploy project:**:
    ```sh
       make clean package deploy
    ```
-3. **Create Flink SQL Table to view result:**:
+4. **In a separate terminal window create Flink SQL Table to view result:**:
    ```sh
       make sql_client
    ```
@@ -115,19 +115,25 @@ Saves enriched data into MongoDB.
    'collection' = 'twitter_collection'
    );
    ```
-4. **Run the Collector Stream:**:
+5. **Run the Collector Stream:**:
    ```sh
       make remote_collection_stream
    ```
-5. **Run the Aggregation Stream:**:
+6. **Run the Aggregation Stream:**:
    ```sh
       make remote_aggregation_stream
    ```
-6. **Shutdowm env:**:
-   ```sh
-      make docker_down
+7. **To view running Fling Job's open in the browser:** http://localhost:8082/#/job/running
+8. **To results go back to terminal window with Flink SQL and run query:**:
+   ```postgres-sql
+   SELECT * FROM twitter_table;
    ```
-6. **Clean up:**:
-   ```sh
-      make docker_clean
-   ```
+   To refresh results, rerun the same query and pay attention `timestamp` column.
+10. **Shutdowm env:**:
+    ```sh
+       make docker_down
+    ```
+11. **Clean up:**:
+    ```sh
+       make docker_clean
+    ```

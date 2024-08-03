@@ -57,7 +57,7 @@ docker_down:
 
 .PHONY: docker_logs
 ## Follow logs
-logs:
+docker_logs:
 	docker compose logs -f
 
 .PHONY: job

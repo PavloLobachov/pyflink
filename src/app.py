@@ -53,21 +53,14 @@ if __name__ == "__main__":
     job = args.Job
 
     if job == "collect":
-        env = factory.get_env("TwitterCollectionStreamingJob")
-        stream = factory.create_socket_stream(env)
-        stream.process()
-        env.execute_async(job_name="TwitterCollectionStreamingJob")
+        stream = factory.create_socket_stream("TwitterCollectionStreamingJob")
+        stream.execute_async()
     elif job == "aggregate":
-        env = factory.get_env("TwitterAggregationStreamingJob")
-        stream = factory.create_aggregator_stream(env)
-        stream.process()
-        env.execute_async(job_name="TwitterAggregationStreamingJob")
+        pass
+        stream = factory.create_aggregator_stream("TwitterAggregationStreamingJob")
+        stream.execute_async()
     else:
-        env1 = factory.get_env("TwitterCollectionStreamingJob")
-        stream1 = factory.create_socket_stream(env1)
-        stream1.process()
-        env1.execute_async(job_name="TwitterCollectionStreamingJob")
-        env2 = factory.get_env("TwitterAggregationStreamingJob")
-        stream2 = factory.create_aggregator_stream(env2)
-        stream2.process()
-        env2.execute(job_name="TwitterAggregationStreamingJob")
+        stream1 = factory.create_socket_stream("TwitterCollectionStreamingJob")
+        stream1.execute_async()
+        stream2 = factory.create_aggregator_stream("TwitterAggregationStreamingJob")
+        stream2.execute()

@@ -1,8 +1,9 @@
 import re
 from datetime import datetime
+from typing import Callable
 
-from pyflink.common import Types, Row
-from pyflink.datastream import StreamExecutionEnvironment, MapFunction
+from pyflink.common import Types, Row, Configuration
+from pyflink.datastream import MapFunction
 
 from core.sink import ValueSink
 from core.source import ValueSource
@@ -12,12 +13,14 @@ from core.streaming import Stream
 class SocketStream(Stream):
 
     def __init__(self,
-                 env: 'StreamExecutionEnvironment',
-                 tweet_source: ValueSource[str],
-                 tweet_sink: ValueSink[Row]):
-        self.env = env
-        self.tweet_source = tweet_source
-        self.tweet_sink = tweet_sink
+                 tweet_source_generator: Callable[[], ValueSource[str]],
+                 tweet_sink_generator: Callable[[], ValueSink[Row]],
+                 job_name: str,
+                 jar_files: list[str] = None,
+                 configuration: Configuration = None):
+        super().__init__(job_name, jar_files, configuration)
+        self.tweet_source = tweet_source_generator()
+        self.tweet_sink = tweet_sink_generator()
 
     def process(self) -> None:
         ds = self.read(self.tweet_source)

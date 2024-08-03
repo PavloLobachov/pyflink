@@ -1,7 +1,7 @@
 from typing import Tuple, List, Any, Callable
 
-from pyflink.common import Types, Time, Row
-from pyflink.datastream import StreamExecutionEnvironment, AggregateFunction, MapFunction, RuntimeContext
+from pyflink.common import Types, Time, Row, Configuration
+from pyflink.datastream import AggregateFunction, MapFunction, RuntimeContext
 from pyflink.datastream.window import TumblingEventTimeWindows
 
 from core.external_service import ExternalService
@@ -11,15 +11,16 @@ from core.streaming import Stream
 
 
 class AggregatorStream(Stream):
-
     def __init__(self,
-                 env: 'StreamExecutionEnvironment',
-                 tweet_source: ValueSource[Row],
-                 tweet_sink: ValueSink[Row],
-                 external_service: Callable[[], ExternalService[dict[str, Any]]]):
-        self.env = env
-        self.tweet_source = tweet_source
-        self.tweet_sink = tweet_sink
+                 tweet_source_generator: Callable[[], ValueSource[Row]],
+                 tweet_sink_generator: Callable[[], ValueSink[Row]],
+                 external_service: Callable[[], ExternalService[dict[str, Any]]],
+                 job_name: str,
+                 jar_files: list[str] = None,
+                 configuration: Configuration = None):
+        super().__init__(job_name, jar_files, configuration)
+        self.tweet_source = tweet_source_generator()
+        self.tweet_sink = tweet_sink_generator()
         self.agg_schema = Types.TUPLE(
             [Types.STRING(), Types.LIST(Types.STRING()), Types.STRING()])
         self.res_schema = Types.ROW_NAMED(

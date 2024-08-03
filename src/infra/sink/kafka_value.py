@@ -1,8 +1,8 @@
 import logging
 import sys
-from typing import Callable, Optional, Any, TypeVar, Mapping, Generic
+from typing import Callable, Optional, TypeVar, Generic
 
-from pyflink.common import TypeInformation
+from pyflink.common import TypeInformation, SerializationSchema
 from pyflink.datastream import DataStream, StreamExecutionEnvironment
 from pyflink.datastream.connectors import DeliveryGuarantee
 from pyflink.datastream.connectors.kafka import KafkaSink, KafkaRecordSerializationSchema
@@ -18,18 +18,22 @@ O = TypeVar('O')
 
 class KafkaValueSink(Generic[I, O], ValueSink[I]):
     def __init__(self,
-                 bootstrap_servers: list[str],
-                 serialization_schema: KafkaRecordSerializationSchema,
+                 topic: str,
+                 bootstrap_servers: str,
+                 serialization_schema: SerializationSchema,
                  sink_name: str,
                  exactly_once: bool = False,
                  transactional_id_prefix: Optional[str] = None,
                  flink_schema: Optional[dict[str, TypeInformation]] = None,
                  event_translator: Optional[Callable[[I], O]] = None):
         self.sink_name = sink_name
-        self.serialization_schema = serialization_schema
+        record_serialization_schema = (KafkaRecordSerializationSchema.builder()
+                                       .set_topic_selector(lambda _: topic)
+                                       .set_value_serialization_schema(serialization_schema)
+                                       .build())
         serializer_builder = (KafkaSink.builder()
                               .set_bootstrap_servers(bootstrap_servers)
-                              .set_record_serializer(serialization_schema))
+                              .set_record_serializer(record_serialization_schema))
         if exactly_once and transactional_id_prefix:
             trx_timeout_ms = 1000 * 60 * 10
             self.kafka_producer = (serializer_builder

@@ -20,10 +20,10 @@ class KafkaValueSource(Generic[I, O], ValueSource[O]):
                  bootstrap_servers: str,
                  topic: str,
                  group: str,
-                 starting_offsets_initializer: 'KafkaOffsetsInitializer',
                  deserialization_schema: DeserializationSchema,
                  source_name: str,
                  watermark_strategy: WatermarkStrategy,
+                 starting_offsets_initializer: 'KafkaOffsetsInitializer',
                  flink_schema: Optional[dict[str, TypeInformation]] = None,
                  event_translator: Optional[Callable[[I], O]] = None):
         self.topic = topic
